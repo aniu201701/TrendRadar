@@ -1,3 +1,4 @@
+# 政策经济
 美联储
 特朗普
 美国经济
@@ -6,6 +7,7 @@
 BTC
 ETH
 
+# 交易平台行情
 BTC
 ETH
 以太坊
@@ -15,6 +17,7 @@ ETH
 !广告
 !教程
 
+# 行业知名人物
 币安
 Coinbase
 交易所
@@ -26,14 +29,17 @@ Vitalik Buterin
 中本聪
 Satoshi Nakamoto
 
+# 热门币种
 BNB
 DOGE
 狗狗
 
+# 市场情绪
 空投
 牛市
 熊市
 
+# 区块链技术
 区块链
 Blockchain
 稳定币

@@ -613,7 +613,7 @@ def save_titles_to_file(results: Dict, id_to_name: Dict, failed_ids: List) -> st
 def load_frequency_words(
     frequency_file: Optional[str] = None,
 ) -> Tuple[List[Dict], List[str]]:
-    """加载频率词配置"""
+    """加载频率词配置，支持 # 标题行来定义分组标题"""
     if frequency_file is None:
         frequency_file = os.environ.get(
             "FREQUENCY_WORDS_PATH", "config/frequency_words.txt"
@@ -632,13 +632,30 @@ def load_frequency_words(
     filter_words = []
 
     for group in word_groups:
-        words = [word.strip() for word in group.split("\n") if word.strip()]
+        lines = [line.strip() for line in group.split("\n") if line.strip()]
+
+        # 检查第一行是否为标题行（以 # 开头）
+        group_title = None
+        words_to_process = lines
+
+        if lines and lines[0].startswith("# "):
+            # 提取标题（去掉 # 前缀和多余空格）
+            title_content = lines[0][2:].strip()
+            if title_content:  # 只有当标题内容非空时才使用
+                group_title = title_content
+            words_to_process = lines[1:]  # 跳过标题行，处理剩余的词汇
+
+        # 进一步过滤掉其他可能的标题行（# 开头的行不应该被当作词汇处理）
+        filtered_words = []
+        for word in words_to_process:
+            if not word.startswith("# "):  # 跳过所有 # 开头的行
+                filtered_words.append(word)
 
         group_required_words = []
         group_normal_words = []
         group_filter_words = []
 
-        for word in words:
+        for word in filtered_words:
             if word.startswith("!"):
                 filter_words.append(word[1:])
                 group_filter_words.append(word[1:])
@@ -648,7 +665,10 @@ def load_frequency_words(
                 group_normal_words.append(word)
 
         if group_required_words or group_normal_words:
-            if group_normal_words:
+            # 确定分组标题：优先使用自定义标题，否则使用自动生成的标题
+            if group_title:
+                group_key = group_title
+            elif group_normal_words:
                 group_key = " ".join(group_normal_words)
             else:
                 group_key = " ".join(group_required_words)
