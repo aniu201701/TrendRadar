@@ -2917,7 +2917,11 @@ def split_content_into_batches(
 
     base_header = ""
     if format_type == "wework":
-        base_header = f"**总新闻数：** {total_titles}\n\n\n\n"
+        if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+            # 微信兼容模式：使用纯文本格式
+            base_header = f"总新闻数：{total_titles}\n\n\n\n"
+        else:
+            base_header = f"**总新闻数：** {total_titles}\n\n\n\n"
     elif format_type == "telegram":
         base_header = f"总新闻数： {total_titles}\n\n"
     elif format_type == "ntfy":
@@ -2932,9 +2936,15 @@ def split_content_into_batches(
 
     base_footer = ""
     if format_type == "wework":
-        base_footer = f"\n\n\n> 更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}"
-        if update_info:
-            base_footer += f"\n> TrendRadar 发现新版本 **{update_info['remote_version']}**，当前 **{update_info['current_version']}**"
+        if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+            # 微信兼容模式：使用纯文本格式
+            base_footer = f"\n\n\n更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}"
+            if update_info:
+                base_footer += f"\nTrendRadar 发现新版本 {update_info['remote_version']}，当前 {update_info['current_version']}"
+        else:
+            base_footer = f"\n\n\n> 更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}"
+            if update_info:
+                base_footer += f"\n> TrendRadar 发现新版本 **{update_info['remote_version']}**，当前 **{update_info['current_version']}**"
     elif format_type == "telegram":
         base_footer = f"\n\n更新时间：{now.strftime('%Y-%m-%d %H:%M:%S')}"
         if update_info:
@@ -2955,7 +2965,11 @@ def split_content_into_batches(
     stats_header = ""
     if report_data["stats"]:
         if format_type == "wework":
-            stats_header = f"📊 **热点词汇统计**\n\n"
+            if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+                # 微信兼容模式：使用纯文本格式
+                stats_header = f"📊 热点词汇统计\n\n"
+            else:
+                stats_header = f"📊 **热点词汇统计**\n\n"
         elif format_type == "telegram":
             stats_header = f"📊 热点词汇统计\n\n"
         elif format_type == "ntfy":
@@ -3011,16 +3025,25 @@ def split_content_into_batches(
             # 构建词组标题
             word_header = ""
             if format_type == "wework":
-                if count >= 10:
-                    word_header = (
-                        f"🔥 {sequence_display} **{word}** : **{count}** 条\n\n"
-                    )
-                elif count >= 5:
-                    word_header = (
-                        f"📈 {sequence_display} **{word}** : **{count}** 条\n\n"
-                    )
+                if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+                    # 微信兼容模式：使用纯文本格式
+                    if count >= 10:
+                        word_header = f"🔥 {sequence_display} {word} : {count} 条\n\n"
+                    elif count >= 5:
+                        word_header = f"📈 {sequence_display} {word} : {count} 条\n\n"
+                    else:
+                        word_header = f"📌 {sequence_display} {word} : {count} 条\n\n"
                 else:
-                    word_header = f"📌 {sequence_display} **{word}** : {count} 条\n\n"
+                    if count >= 10:
+                        word_header = (
+                            f"🔥 {sequence_display} **{word}** : **{count}** 条\n\n"
+                        )
+                    elif count >= 5:
+                        word_header = (
+                            f"📈 {sequence_display} **{word}** : **{count}** 条\n\n"
+                        )
+                    else:
+                        word_header = f"📌 {sequence_display} **{word}** : {count} 条\n\n"
             elif format_type == "telegram":
                 if count >= 10:
                     word_header = f"🔥 {sequence_display} {word} : {count} 条\n\n"
@@ -3186,7 +3209,11 @@ def split_content_into_batches(
     if report_data["new_titles"]:
         new_header = ""
         if format_type == "wework":
-            new_header = f"\n\n\n\n🆕 **本次新增热点新闻** (共 {report_data['total_new_count']} 条)\n\n"
+            if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+                # 微信兼容模式：使用纯文本格式
+                new_header = f"\n\n\n\n🆕 本次新增热点新闻 (共 {report_data['total_new_count']} 条)\n\n"
+            else:
+                new_header = f"\n\n\n\n🆕 **本次新增热点新闻** (共 {report_data['total_new_count']} 条)\n\n"
         elif format_type == "telegram":
             new_header = (
                 f"\n\n🆕 本次新增热点新闻 (共 {report_data['total_new_count']} 条)\n\n"
@@ -3215,7 +3242,11 @@ def split_content_into_batches(
         for source_data in report_data["new_titles"]:
             source_header = ""
             if format_type == "wework":
-                source_header = f"**{source_data['source_name']}** ({len(source_data['titles'])} 条):\n\n"
+                if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+                    # 微信兼容模式：使用纯文本格式
+                    source_header = f"{source_data['source_name']} ({len(source_data['titles'])} 条):\n\n"
+                else:
+                    source_header = f"**{source_data['source_name']}** ({len(source_data['titles'])} 条):\n\n"
             elif format_type == "telegram":
                 source_header = f"{source_data['source_name']} ({len(source_data['titles'])} 条):\n\n"
             elif format_type == "ntfy":
@@ -3326,7 +3357,11 @@ def split_content_into_batches(
     if report_data["failed_ids"]:
         failed_header = ""
         if format_type == "wework":
-            failed_header = f"\n\n\n\n⚠️ **数据获取失败的平台：**\n\n"
+            if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+                # 微信兼容模式：使用纯文本格式
+                failed_header = f"\n\n\n\n⚠️ 数据获取失败的平台：\n\n"
+            else:
+                failed_header = f"\n\n\n\n⚠️ **数据获取失败的平台：**\n\n"
         elif format_type == "telegram":
             failed_header = f"\n\n⚠️ 数据获取失败的平台：\n\n"
         elif format_type == "ntfy":
