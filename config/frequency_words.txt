@@ -7,20 +7,9 @@
 BTC
 ETH
 
-# 交易平台行情
-BTC
-ETH
-以太坊
-+行情
-+价格
-+ETF
-!广告
-!教程
-
 # 行业知名人物
 币安
 Coinbase
-交易所
 CZ
 赵长鹏
 何一
@@ -49,3 +38,12 @@ Blockchain
 !广告
 !课程
 !培训
+
+# 方程式新闻 BWENews
+BWENEWS
+AggrNews
+Binance EN
+Binance Alpha Listing
+Bybit Listing
+OKX LISTING
+BWEnews
