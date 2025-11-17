@@ -95,3 +95,5 @@ platforms:
     name: "金十数据"
   - id: "fastbull"
     name: "快讯通"
+  - id: "rss:https://rss-public.bwe-ws.com/"
+    name: "方程式新闻 BWEnews"

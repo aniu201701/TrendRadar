@@ -18,6 +18,8 @@ from typing import Dict, List, Tuple, Optional, Union
 import pytz
 import requests
 import yaml
+import feedparser
+import xml.etree.ElementTree as ET
 
 
 VERSION = "3.0.5"
@@ -504,6 +506,94 @@ class DataFetcher:
                     return None, id_value, alias
         return None, id_value, alias
 
+    def fetch_rss_data(
+        self,
+        id_info: Union[str, Tuple[str, str]],
+        max_retries: int = 2,
+        min_retry_wait: int = 3,
+        max_retry_wait: int = 5,
+    ) -> Tuple[Optional[str], str, str]:
+        """获取RSS数据，支持重试"""
+        if isinstance(id_info, tuple):
+            id_value, alias = id_info
+        else:
+            id_value = id_info
+            alias = id_value
+
+        # 如果ID以rss:开头，表示这是一个RSS源
+        if not id_value.startswith('rss:'):
+            # 非RSS源，使用原有的API方式
+            return self.fetch_data(id_info, max_retries, min_retry_wait, max_retry_wait)
+
+        # 提取RSS URL
+        rss_url = id_value[4:]  # 去掉'rss:'前缀
+
+        proxies = None
+        if self.proxy_url:
+            proxies = {"http": self.proxy_url, "https": self.proxy_url}
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/rss+xml, application/xml, text/xml, */*",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Connection": "keep-alive",
+            "Cache-Control": "no-cache",
+        }
+
+        retries = 0
+        while retries <= max_retries:
+            try:
+                response = requests.get(
+                    rss_url, proxies=proxies, headers=headers, timeout=15
+                )
+                response.raise_for_status()
+
+                # 解析RSS
+                feed = feedparser.parse(response.content)
+
+                if feed.bozo and feed.bozo_exception:
+                    print(f"RSS解析警告 {id_value}: {feed.bozo_exception}")
+
+                # 转换RSS为我们期望的JSON格式
+                items = []
+                for i, entry in enumerate(feed.entries[:50], 1):  # 限制50条
+                    # 清理标题
+                    title = clean_title(entry.title if hasattr(entry, 'title') else f"未知标题_{i}")
+
+                    # 获取链接
+                    url = entry.link if hasattr(entry, 'link') else ""
+
+                    items.append({
+                        "title": title,
+                        "url": url,
+                        "mobileUrl": url  # RSS通常没有单独的移动端URL
+                    })
+
+                # 构造与API相同的响应格式
+                rss_data = {
+                    "status": "success",
+                    "items": items,
+                    "source": "rss",
+                    "feed_title": feed.feed.title if hasattr(feed.feed, 'title') else alias
+                }
+
+                data_text = json.dumps(rss_data, ensure_ascii=False, indent=2)
+                print(f"获取RSS {id_value} 成功（{len(items)}条）")
+                return data_text, id_value, alias
+
+            except Exception as e:
+                retries += 1
+                if retries <= max_retries:
+                    base_wait = random.uniform(min_retry_wait, max_retry_wait)
+                    additional_wait = (retries - 1) * random.uniform(1, 2)
+                    wait_time = base_wait + additional_wait
+                    print(f"请求RSS {id_value} 失败: {e}. {wait_time:.2f}秒后重试...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"请求RSS {id_value} 失败: {e}")
+                    return None, id_value, alias
+        return None, id_value, alias
+
     def crawl_websites(
         self,
         ids_list: List[Union[str, Tuple[str, str]]],
@@ -522,7 +612,7 @@ class DataFetcher:
                 name = id_value
 
             id_to_name[id_value] = name
-            response, _, _ = self.fetch_data(id_info)
+            response, _, _ = self.fetch_rss_data(id_info)
 
             if response:
                 try:
