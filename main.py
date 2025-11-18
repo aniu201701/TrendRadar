@@ -336,6 +336,24 @@ def html_escape(text: str) -> str:
     )
 
 
+def optimize_content_for_wechat_compatible(content: str) -> str:
+    """
+    优化微信兼容模式的内容
+    将 <br/> 和 <br> 标签替换为换行符
+    """
+    if not isinstance(content, str):
+        content = str(content)
+
+    # 替换各种形式的 br 标签为换行符
+    import re
+    content = re.sub(r'<br\s*/?>', '\n', content, flags=re.IGNORECASE)
+    content = re.sub(r'<br/>', '\n', content)
+    content = re.sub(r'<BR\s*/?>', '\n', content)
+    content = re.sub(r'<BR/>', '\n', content)
+
+    return content
+
+
 # === 推送记录管理 ===
 class PushRecordManager:
     """推送记录管理器"""
@@ -1747,6 +1765,9 @@ def format_title_for_wechat_compatible(title_data: Dict, show_source: bool = Tru
     link_url = title_data.get("mobile_url") or title_data.get("url", "")
     if link_url:
         result += f"\n🔗 {link_url}"
+
+    # 对结果进行微信兼容优化，替换 <br/> 标签
+    result = optimize_content_for_wechat_compatible(result)
 
     return result
 
@@ -3830,6 +3851,10 @@ def send_to_wework(
                 # 正常模式：使用 Markdown 粗体
                 batch_header = f"**[第 {i}/{len(batches)} 批次]**\n\n"
             batch_content = batch_header + batch_content
+
+        # 微信兼容模式：优化内容格式，将 <br/> 替换为换行符
+        if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
+            batch_content = optimize_content_for_wechat_compatible(batch_content)
 
         # 根据微信兼容模式选择消息类型
         if CONFIG.get("WEWORK_WECHAT_COMPATIBLE", False):
